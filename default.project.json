@@ -1,0 +1,6 @@
+{
+	"name": "luazip",
+	"tree": {
+		"$path": "src"
+	}
+}

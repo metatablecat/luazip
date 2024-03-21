@@ -1,0 +1,1 @@
+{"name":"luazip","className":"ModuleScript","filePaths":["src\\init.luau","default.project.json"],"children":[{"name":"Huffman","className":"ModuleScript","filePaths":["src\\Huffman.luau"]},{"name":"Deflate","className":"ModuleScript","filePaths":["src\\Deflate.luau"]},{"name":"BufferReader","className":"ModuleScript","filePaths":["src\\BufferReader.luau"]}]}
