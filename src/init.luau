@@ -3,9 +3,11 @@
 -- NOTE: These are compressed until :open is called
 local BufferReader = require(script.BufferReader)
 local Deflate = require(script.Deflate)
+local crc = require(script.CRC32)
 
 type ZIPCommon = ZIPFile & ZIPDirectory
 
+local DISABLE_CRC = false -- You should leave this on, unless debugging bad data
 local COMPRESSION_METHODS = {
 	[0] = "Uncompressed",
 	[8] = "Deflate",
@@ -17,7 +19,8 @@ export type ZIPFile = {
 	UncompressedSize: number,
 	CompressedData: buffer,
 	CompressionMethod: "Uncompressed"|"Deflate"|"Unknown",
-	Open: (ZIPFile) -> buffer -- uncompressed data
+	CRC32: number,
+	Open: (ZIPFile) -> string -- uncompressed data
 }
 
 export type ZIPDirectory = {
@@ -104,22 +107,33 @@ local function ZIPFile(reader: BufferReader.BufferReader): ZIPFile
 	header.ExtraField = if header.ExtraFieldLength > 0 then reader:readstring(header.ExtraFieldLength) else ""
 	
 	local data = reader:readstring(if header.CompressionMethod == 0 then header.UncompressedSize else header.CompressedSize)
-	return {
+	local zipFile = {
 		Type = "File",
 		UncompressedSize = header.UncompressedSize,
 		CompressedData = data,
 		CompressionMethod = COMPRESSION_METHODS[header.CompressionMethod] or "Unknown",
+		CRC32 = header.CRC32,
 		
 		Open = function(self)
+			local data
 			if self.CompressionMethod == "Uncompressed" then
-				return self.CompressedData
+				data = self.CompressedData
 			elseif self.CompressionMethod == "Deflate" then
-				return Deflate(self.CompressedData)
+				data = Deflate(self.CompressedData)
 			else
 				error("Unknown compression method")
 			end
+			
+			local crcCheck = crc(buffer.fromstring(data))
+			if crcCheck ~= self.CRC32 then
+				(if DISABLE_CRC then warn else error)(`Failed CRC check. {crcCheck}, {self.CRC32}`)
+			end
+
+			return data
 		end,
 	}
+	table.freeze(zipFile)
+	return zipFile
 end
 
 local function BuildFiles(stream, fileHeaders): {[string]: ZIPFile}
@@ -143,6 +157,7 @@ local function ZIPDirectory(name, parent): ZIPDirectory
 	}
 	
 	if parent then parent.Objects[name] = d end
+	table.freeze(d)
 	return d
 end
 
