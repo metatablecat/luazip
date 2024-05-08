@@ -132,7 +132,6 @@ local function ZIPFile(reader: BufferReader.BufferReader): ZIPFile
 			return data
 		end,
 	}
-	table.freeze(zipFile)
 	return zipFile
 end
 
@@ -157,7 +156,6 @@ local function ZIPDirectory(name, parent): ZIPDirectory
 	}
 	
 	if parent then parent.Objects[name] = d end
-	table.freeze(d)
 	return d
 end
 
