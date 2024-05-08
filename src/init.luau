@@ -126,7 +126,7 @@ local function ZIPFile(reader: BufferReader.BufferReader): ZIPFile
 			
 			local crcCheck = crc(buffer.fromstring(data))
 			if crcCheck ~= self.CRC32 then
-				(if DISABLE_CRC then warn else error)(`Failed CRC check. {crcCheck}, {self.CRC32}`)
+				(if DISABLE_CRC then warn else error)(`Failed CRC check.`)
 			end
 
 			return data
