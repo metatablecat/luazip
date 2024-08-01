@@ -7,7 +7,7 @@ local crc = require(script.CRC32)
 
 type ZIPCommon = ZIPFile & ZIPDirectory
 
-local DISABLE_CRC = false -- You should leave this on, unless debugging bad data
+local DISABLE_CRC = true -- You should leave this on, unless debugging bad data
 local COMPRESSION_METHODS = {
 	[0] = "Uncompressed",
 	[8] = "Deflate",
@@ -115,7 +115,6 @@ local function ZIPFile(reader: BufferReader.BufferReader): ZIPFile
 		CRC32 = header.CRC32,
 		
 		Open = function(self)
-			local data
 			if self.CompressionMethod == "Uncompressed" then
 				data = self.CompressedData
 			elseif self.CompressionMethod == "Deflate" then
@@ -123,7 +122,7 @@ local function ZIPFile(reader: BufferReader.BufferReader): ZIPFile
 			else
 				error("Unknown compression method")
 			end
-			
+
 			local crcCheck = crc(buffer.fromstring(data))
 			if crcCheck ~= self.CRC32 then
 				(if DISABLE_CRC then warn else error)(`Failed CRC check.`)
